@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block fixed_content %}
+<form method="post" action="{{ url_for('registrar') }}" class="ui form segment">
+  <div class="field">
+    <label>Nome</label>
+    <input name="nome" id="nome" placeholder="Nome do cliente" required list="nomes-list">
+    <datalist id="nomes-list">
+      {% for nm in nomes %}
+      <option value="{{ nm }}"></option>
+      {% endfor %}
+    </datalist>
+  </div>
+
+  <div class="field">
+    <label>CPF</label>
+    <input name="cpf" id="cpf" value="999.999.999-99" required maxlength="14">
+  </div>
+  <div class="field">
+    <label>Valor</label>
+    <input name="valor" id="valor" required placeholder="R$ 0,00">
+  </div>
+  <div class="field">
+    <label>Data do Pagamento</label>
+    <input name="data" type="date" required value="{{ current_date }}">
+  </div>
+  <div style="text-align: center; margin-top: 1em;">
+    <!--<button class="ui primary button" type="submit">Registrar</button>-->
+    <button type="submit" class="ui blue mini button">Registrar</button>
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const nomeInput = document.getElementById("nome");
+      const cpfInput = document.getElementById("cpf");
+
+      nomeInput.addEventListener("change", function () {
+        const nome = nomeInput.value;
+        if (!nome.trim()) return;
+
+        fetch(`/cpf-por-nome?nome=${encodeURIComponent(nome)}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.cpf) {
+              cpfInput.value = data.cpf;
+            }
+          });
+      });
+    });
+  </script>
+
+</form>
+
+<!-- Título da lista, fixo no topo -->
+<!--<h3 class="ui center aligned header">Recebimentos</h3>-->
+
+<form method="post" class="ui form segment">
+  <div class="field">
+    <label>Mês de competência</label>
+    <select name="competencia" onchange="this.form.submit()">
+      {% for num in range(1, 13) %}
+      <option value="{{ '%s-%02d' % (current_date[:4], num) }}" {% if competencia=='%s-%02d' % (current_date[:4], num)
+        %}selected{% endif %}>
+        {{ '{:02d}'.format(num) }} / {{ current_date[:4] }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div style="text-align: center; margin-top: 1em;">
+    <a href="{{ url_for('report') }}" class="ui gray mini button">Relatório</a>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block scrollable_content %}
+<form method="post" action="/atualizar">
+  <div class="ui divided items">
+    {% for r in registros %}
+
+    <div class="item" style="padding: 0.7em 0;">
+
+      <div class="content" style="font-size: 0.85em;">
+
+        <!-- Primeira linha -->
+        <div style="display: flex; align-items: center; gap: 1em; font-family: monospace;">
+          <!-- Nome com largura fixa -->
+          <div
+            style="width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
+            <strong>{{ r.nome }}</strong>
+          </div>
+
+
+          <!-- Valor com alinhamento à direita e largura fixa -->
+          <div style="width: 14ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
+            {{ r.valor | format_currency }}
+          </div>
+
+          <!-- Data com alinhamento à direita e largura fixa -->
+          <div style="width: 12ch; text-align: right; flex-shrink: 0;">
+            {{ r.data.strftime('%d/%m/%Y') }}
+          </div>
+        </div>
+
+        <!-- Segunda linha -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5em;">
+          <div>
+            <div class="ui checkbox" style="margin-left: 0.5ch;">
+              <input type="checkbox" name="considerar_{{ r.id }}" {% if r.considerar %}checked{% endif %}>
+              <label>Considerar?</label>
+            </div>
+
+          </div>
+          <div>
+            <button class="ui tiny red basic button" type="button"
+              onclick="excluirRegistro('{{ r.id }}')">Excluir</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="text-align: center;">
+    <button type="submit" class="ui green mini button">Atualizar</button>
+  </div>
+
+</form>
+{% endblock %}

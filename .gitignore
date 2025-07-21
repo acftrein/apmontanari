@@ -1,0 +1,29 @@
+# Ambiente virtual
+venv/
+ENV/
+env/
+.venv/
+
+# Bytecode do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite Database
+*.sqlite3
+*.db
+
+# Arquivos de log
+*.log
+
+# Configurações do VSCode
+.vscode/
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos do Flask
+instance/
+*.env
+.env

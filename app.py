@@ -150,7 +150,7 @@ def excluir(id):
     registro = Payment.query.get_or_404(id)
     db.session.delete(registro)
     db.session.commit()
-    flash(f"Registro de {registro.nome} excluído com sucesso.")
+    flash(f"Registro do cliente {registro.nome} excluído com sucesso.")
     return redirect(url_for("index"))
 
 

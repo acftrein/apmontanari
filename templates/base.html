@@ -7,30 +7,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App Montanari</title>
+
+  <!-- CSS Semantic UI -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.css" />
+
+  <!-- jQuery (precisa vir antes do Semantic JS) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- JavaScript Semantic UI -->
   <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.5.0/dist/semantic.min.js"></script>
+
   <style>
     body {
-      margin: 2em;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .ui.container {
-      max-width: 600px;
-      margin: auto;
+      max-width: 100%;
+      padding: 1em;
     }
 
     .ui.form input {
       width: 100%;
-    }
-
-    .checkbox-cell {
-      text-align: center;
-    }
-  </style>
-  <style>
-    .ui.container {
-      max-width: 100%;
-      padding: 1em;
     }
 
     .ui.items .item {
@@ -38,18 +39,15 @@
       border-radius: 4px;
       margin-bottom: 0.5em;
     }
-  </style>
 
-  <style>
     .ui.divided.items>.item:first-child {
       border-top: 1px solid #d4d4d5 !important;
     }
   </style>
-
 </head>
 
-<body style="margin: 0; height: 100vh; display: flex; flex-direction: column;">
-  <div class="ui container" style="flex: 0 0 auto; padding: 1em;">
+<body>
+  <div class="ui container">
     <h2 class="ui center aligned header">Recebimentos</h2>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -63,29 +61,39 @@
     {% block fixed_content %}{% endblock %}
   </div>
 
-  <!-- Área scrollável -->
-  <div style="flex: 1 1 auto; overflow-y: auto; padding: 1em;">
+  
+  <div style="flex: 1 1 auto; overflow-y: auto; padding-top: 0.0em; padding-left: 1.7em; padding-right: 1.5em;">
     {% block scrollable_content %}{% endblock %}
   </div>
 
+  <!-- Máscaras CPF e valor, exclusão de registros -->
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", () => {
       const cpfInput = document.getElementById("cpf");
       if (cpfInput) {
-        cpfInput.addEventListener("input", function () {
-          let value = cpfInput.value.replace(/\D/g, "").slice(0, 11); // Apenas números
-          value = value.replace(/(\d{3})(\d)/, "$1.$2");
-          value = value.replace(/(\d{3})(\d)/, "$1.$2");
-          value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-          cpfInput.value = value;
+        cpfInput.addEventListener("input", () => {
+          let v = cpfInput.value.replace(/\D/g, "").slice(0, 11);
+          v = v.replace(/(\d{3})(?=\d)/g, "$1.");
+          cpfInput.value = v.replace(/(\d{3})\.(\d{3})(?=\d)/, "$1.$2-");
         });
       }
+      const valorInput = document.getElementById("valor");
+      if (valorInput) {
+        valorInput.addEventListener("input", () => {
+          let v = valorInput.value.replace(/\D/g, "");
+          v = (parseFloat(v) / 100).toFixed(2).toString();
+          v = v.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+          valorInput.value = "R$ " + v;
+        });
+      }
+      $(document).on('click', '#open-records', () => {
+        $('#records-modal').modal('show');
+      });
     });
   </script>
 
   <script>
     function excluirRegistro(id) {
-      id = parseInt(id);  // converte a string recebida para número
       if (!confirm('Deseja excluir este registro?')) return;
       const form = document.createElement('form');
       form.method = 'POST';
@@ -94,22 +102,6 @@
       form.submit();
     }
   </script>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const valorInput = document.getElementById("valor");
-
-      if (valorInput) {
-        valorInput.addEventListener("input", function () {
-          let val = valorInput.value.replace(/\D/g, "");
-          val = (parseFloat(val) / 100).toFixed(2).toString();
-          val = val.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-          valorInput.value = "R$ " + val;
-        });
-      }
-    });
-  </script>
-
 </body>
 
 </html>

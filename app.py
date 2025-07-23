@@ -36,8 +36,6 @@ app.config["MAIL_DEFAULT_SENDER"] = "acftrein@gmail.com"  # mesmo remetente
 db.init_app(app)
 mail.init_app(app)
 
-print("")
-
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)

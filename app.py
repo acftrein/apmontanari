@@ -3,7 +3,6 @@ from flask import jsonify
 from extensions import db, mail
 from datetime import datetime
 import csv, io, os
-import os
 from emails import send_report
 
 recipients = os.getenv("REPORT_RECIPIENTS", "acftrein@gmail.com").split(",")
@@ -26,6 +25,7 @@ def format_currency_filter(value):
 # SECRET_KEY=4f3c7d9f2b87c8432e1c6a23a88f1a65
 app.config["SECRET_KEY"] = "4f3c7d9f2b87c8432e1c6a23a88f1a65"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/atrein/apmontanari/instance/database.db'
 
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587

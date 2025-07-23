@@ -19,7 +19,7 @@ current_date = date.today().isoformat()
 def format_currency_filter(value):
     return format_currency(value, "BRL", locale="pt_BR")
 
-
+print("")
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mudar_isso')
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 # SECRET_KEY=4f3c7d9f2b87c8432e1c6a23a88f1a65

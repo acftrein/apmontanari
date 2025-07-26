@@ -4,6 +4,7 @@ from extensions import db, mail
 from datetime import datetime
 import csv, io, os
 from emails import send_report
+from sqlalchemy import func
 
 recipients = os.getenv("REPORT_RECIPIENTS", "acftrein@gmail.com").split(",")
 
@@ -18,6 +19,7 @@ current_date = date.today().isoformat()
 @app.template_filter("format_currency")
 def format_currency_filter(value):
     return format_currency(value, "BRL", locale="pt_BR")
+
 
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mudar_isso')
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -35,6 +37,7 @@ app.config["MAIL_DEFAULT_SENDER"] = "acftrein@gmail.com"  # mesmo remetente
 
 db.init_app(app)
 mail.init_app(app)
+
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -65,18 +68,24 @@ def index():
 
     registros = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
 
+    total = sum(r.valor for r in registros)
+    total_marked = sum(r.valor for r in registros if r.considerar)
+
     return render_template(
         "index.html",
         registros=registros,
         current_date=date.today().isoformat(),
         competencia=competencia,
         nomes=nomes,
+        total=total,
+        total_marked=total_marked,
     )
 
 
 @app.route("/registrar", methods=["POST"])
 def registrar():
     nome = request.form["nome"]
+    nome = request.form["nome"].strip().upper()
     cpf = request.form["cpf"].strip()
     valor_str = (
         request.form["valor"]

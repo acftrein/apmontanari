@@ -69,7 +69,17 @@
     <button type="button" id="open-records" class="ui blue mini button">Ver Registros</button>
     <a href="{{ url_for('report') }}" class="ui gray mini button">Gerar Arquivo</a>
   </div>
+</form>
 
+<form class="ui form segment">
+  <div style="text-align: center;">
+    <span style="color: #2185d0; font-weight: bold; margin-right: 2em;">
+      {{ total | format_currency }}
+    </span>
+    <span style="color: #0f993d; font-weight: bold;">
+      {{ total_marked | format_currency }}
+    </span>
+  </div>
 </form>
 
 <!-- MODAL -->
@@ -83,7 +93,7 @@
     <form method="post" action="/atualizar">
       {% if registros %}
       <div class="ui divided items">
-        {% for r in registros %}
+        {% for r in registros|reverse %}
         <div class="item" style="padding: 0.7em 0;">
           <div class="content" style="font-size: 0.85em;">
             <!-- Linha 1 -->
@@ -136,35 +146,37 @@
 {% endblock %}
 
 {% block scrollable_content %}
-<form method="post" action="/atualizar" class="ui form segment">
-  {% if registros %}
-  {% for r in registros %}
-  <div style="border-bottom: 1px solid #ddd; padding: 0.7em 0; font-size: 0.85em;">
-    <div style="display: flex; align-items: center; gap: 1em; font-family: monospace;">
-      <!-- Nome -->
-      <div
-        style="width: 20ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
-        <strong {% if not r.considerar %}style="text-decoration: line-through;"{% endif %}>
-          {{ r.nome }}
-        </strong>
-      </div>
+<div class="ui form segment" style="margin-top: 0;">
+  <form method="post" action="/atualizar">
+    {% if registros %}
+    {% for r in registros|reverse %}
+    <div style="border-bottom: 1px solid #ddd; padding: 0.7em 0; font-size: 0.85em;">
+      <div style="display: flex; align-items: center; gap: 1em; font-family: monospace;">
+        <!-- Nome -->
+        <div
+          style="width: 20ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
+          <strong {% if not r.considerar %}style="text-decoration: line-through;"{% endif %}>
+            {{ r.nome }}
+          </strong>
+        </div>
 
-      <!-- Valor -->
-      <div style="width: 14ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
-        {{ r.valor | format_currency }}
-      </div>
+        <!-- Valor -->
+        <div style="width: 14ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
+          {{ r.valor | format_currency }}
+        </div>
 
-      <!-- Data -->
-      <div style="width: 12ch; text-align: right; flex-shrink: 0;">
-        {{ r.data.strftime('%d/%m/%Y') }}
+        <!-- Data -->
+        <div style="width: 11ch; text-align: right; flex-shrink: 0;">
+          {{ r.data.strftime('%d/%m/%Y') }}
+        </div>
       </div>
     </div>
-  </div>
-  {% endfor %}
-  {% else %}
-  <div style="text-align: center; padding: 0em; color: #888;">
-    <strong>Sem registros para a competência selecionada</strong>
-  </div>
-  {% endif %}
-</form>
+    {% endfor %}
+    {% else %}
+    <div style="text-align: center; padding: 0em; color: #888;">
+      <strong>Sem registros para a competência selecionada</strong>
+    </div>
+    {% endif %}
+  </form>
+</div>
 {% endblock %}

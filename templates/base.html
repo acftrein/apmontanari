@@ -44,6 +44,18 @@
       border-top: 1px solid #d4d4d5 !important;
     }
   </style>
+
+  <style>
+    /* Garantir rolagem interna no modal em dispositivos móveis */
+    #records-modal .content.scrolling {
+      max-height: 70vh !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      /* suaviza o scroll no iOS */
+      padding-right: 0.5em;
+    }
+  </style>
+
 </head>
 
 <body>

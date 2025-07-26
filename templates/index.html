@@ -99,13 +99,13 @@
             <!-- Linha 1 -->
             <div style="display: flex; align-items: center; gap: 1em; font-family: monospace;">
               <div
-                style="width: 20ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
+                style="width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
                 <strong>{{ r.nome }}</strong>
               </div>
-              <div style="width: 14ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
+              <div style="width: 16ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
                 {{ r.valor | format_currency }}
               </div>
-              <div style="width: 12ch; text-align: right; flex-shrink: 0;">
+              <div style="width: 10ch; text-align: right; flex-shrink: 0;">
                 {{ r.data.strftime('%d/%m/%Y') }}
               </div>
             </div>
@@ -154,8 +154,8 @@
       <div style="display: flex; align-items: center; gap: 1em; font-family: monospace;">
         <!-- Nome -->
         <div
-          style="width: 13ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
-          <strong {% if not r.considerar %}style="text-decoration: line-through;"{% endif %}>
+          style="width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
+          <strong {% if not r.considerar %}style="text-decoration: line-through;" {% endif %}>
             {{ r.nome }}
           </strong>
         </div>

@@ -52,7 +52,8 @@ class Payment(db.Model):
 def index():
 
     # Pega nomes únicos para autocomplete
-    nomes = [n[0] for n in db.session.query(Payment.nome).distinct().all()]
+    #nomes = [n[0] for n in db.session.query(Payment.nome).distinct().all()]
+    nomes = [row[0] for row in db.session.query(Payment.nome).distinct().all()]
 
     if "competencia" not in session:
         session["competencia"] = date.today().strftime("%Y-%m")

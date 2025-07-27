@@ -56,6 +56,30 @@
     }
   </style>
 
+  <style>
+    .autocomplete-items {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      z-index: 1000;
+      max-height: 10em;
+      overflow-y: auto;
+    }
+
+    .autocomplete-item {
+      padding: 0.5em;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+
+    .autocomplete-item:hover {
+      background-color: #ddd;
+    }
+  </style>
+
 </head>
 
 <body>
@@ -126,6 +150,38 @@
       form.submit();
     }
   </script>
+
+  <script>
+    const nomes = {{ nomes| tojson }};  // array de strings vindo do servidor
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const nomeInput = document.getElementById("nome");
+      const lista = document.getElementById("autocomplete-list");
+
+      nomeInput.addEventListener("input", () => {
+        lista.innerHTML = '';
+        const val = nomeInput.value.trim().toLowerCase();
+        if (!val) return;
+        const matches = nomes.filter(n => n.toLowerCase().includes(val)).slice(0, 5);
+        matches.forEach(n => {
+          const div = document.createElement('div');
+          div.classList.add('autocomplete-item');
+          div.textContent = n;
+          div.onclick = () => {
+            nomeInput.value = n;
+            lista.innerHTML = '';
+            nomeInput.dispatchEvent(new Event('change'));  // dispara evento change manualmente
+          };
+          lista.appendChild(div);
+        });
+      });
+
+      document.addEventListener("click", e => {
+        if (e.target !== nomeInput) lista.innerHTML = '';
+      });
+    });
+  </script>
+
 </body>
 
 </html>

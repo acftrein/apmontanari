@@ -2,14 +2,11 @@
 
 {% block fixed_content %}
 <form method="post" action="{{ url_for('registrar') }}" class="ui form segment">
-  <div class="field">
+
+  <div class="field" style="position: relative;">
     <label>Nome</label>
-    <input name="nome" id="nome" placeholder="Nome do cliente" required list="nomes-list">
-    <datalist id="nomes-list">
-      {% for nm in nomes %}
-      <option value="{{ nm }}"></option>
-      {% endfor %}
-    </datalist>
+    <input name="nome" id="nome" placeholder="Nome do cliente" required autocomplete="off">
+    <div id="autocomplete-list" class="autocomplete-items"></div>
   </div>
 
   <div class="field">
@@ -45,6 +42,7 @@
           .then(data => {
             if (data.cpf) {
               cpfInput.value = data.cpf;
+              document.getElementById("valor").focus();  // Move o cursor para o campo valor
             }
           });
       });

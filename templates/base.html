@@ -152,7 +152,8 @@
   </script>
 
   <script>
-    const nomes = {{ nomes| tojson }};  // array de strings vindo do servidor
+    //const nomes = {{ nomes| tojson }};  // array de strings vindo do servidor
+    const nomes = JSON.parse('{{ nomes | tojson | safe }}');
 
     document.addEventListener("DOMContentLoaded", () => {
       const nomeInput = document.getElementById("nome");

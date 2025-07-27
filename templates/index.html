@@ -11,16 +11,12 @@
 
   <div class="field">
     <label>CPF</label>
-    <input name="cpf" id="cpf" value="999.999.999-99" required maxlength="14">
+    <input name="cpf" id="cpf" value="999.999.999-99" required maxlength="14" inputmode="numeric">
   </div>
 
   <div class="field">
     <label>Valor</label>
-    <!-- <input name="valor" id="valor" required placeholder="R$ 0,00"> -->
-    <!-- <input name="valor" id="valor" required placeholder="R$ 0,00" inputmode="decimal" pattern="[0-9]*"> -->
-    <input name="valor" id="valor" required placeholder="R$ 0,00" inputmode="numeric" pattern="[0-9]*">
-
-
+    <input name="valor" id="valor" required placeholder="R$ 0,00" inputmode="numeric">
   </div>
 
   <div class="field">
@@ -104,10 +100,10 @@
                 style="width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; padding-left: 0.5ch;">
                 <strong>{{ r.nome }}</strong>
               </div>
-              <div style="width: 16ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
+              <div style="width: 12ch; text-align: right; flex-shrink: 0; color: #2185d0; font-weight: bold;">
                 {{ r.valor | format_currency }}
               </div>
-              <div style="width: 10ch; text-align: right; flex-shrink: 0;">
+              <div style="width: 9ch; text-align: right; flex-shrink: 0;">
                 {{ r.data.strftime('%d/%m/%Y') }}
               </div>
             </div>

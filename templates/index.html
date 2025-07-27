@@ -64,10 +64,31 @@
   </div>
 
   <div style="text-align: center; margin-top: 1em;">
-    <button type="button" id="open-records" class="ui blue mini button">Ver Registros</button>
-    <a href="{{ url_for('report') }}" class="ui gray mini button">Gerar Arquivo</a>
+    <button type="button" id="open-records" class="ui orange mini button">Ver Registros</button>
+    <a href="{{ url_for('report') }}" class="ui gray mini button">Gerar NFS-e</a>
+    <button type="button" id="open-chart" class="ui gray mini button">Ver Gráfico</button>
   </div>
 </form>
+
+<!-- Modal com gráfico -->
+<div id="chart-modal" class="ui modal">
+  <i class="close icon"></i>
+  <div class="header" style="text-align:center;">
+    Faturamento últimos 3 meses
+  </div>
+  <div class="content" style="text-align:center;">
+    <img src="{{ url_for('grafico_recente') }}" alt="Gráfico de faturamento" style="max-width:100%; height:auto;">
+  </div>
+  <div class="actions" style="text-align:center;">
+    <button class="ui red mini button cancel">Fechar</button>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    $('#open-chart').click(() => $('#chart-modal').modal('show'));
+  });
+</script>
 
 <form class="ui form segment">
   <div style="text-align: center;">

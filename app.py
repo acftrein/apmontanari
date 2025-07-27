@@ -1,20 +1,66 @@
-from flask import Flask, session, render_template, request, redirect, url_for, flash
-from flask import jsonify
-from extensions import db, mail
-from datetime import datetime
-import csv, io, os
-from emails import send_report
-from sqlalchemy import func
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func, extract
 
-recipients = os.getenv("REPORT_RECIPIENTS", "acftrein@gmail.com").split(",")
+import datetime
+import os
+import csv
+import io
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+from babel.numbers import format_currency
+from matplotlib.figure import Figure
+from io import BytesIO
+
+from extensions import db, mail
+from emails import send_report
 
 app = Flask(__name__)
 
-from babel.numbers import format_currency
-from datetime import date
+current_date = datetime.date.today()
+recipients = os.getenv("REPORT_RECIPIENTS", "acftrein@gmail.com").split(",")
 
-current_date = date.today().isoformat()
+def obter_totais_ultimos_3_meses():
+    hoje = datetime.date.today()
+    meses = []
+    totais = []
 
+    for i in range(2, -1, -1):  # últimos 3 meses: mais antigo → atual
+        mes_ano = hoje - datetime.timedelta(days=i*30)
+        ano = mes_ano.year
+        mes = mes_ano.month
+
+        total = db.session.query(func.sum(Payment.valor))\
+            .filter(extract('year', Payment.data) == ano)\
+            .filter(extract('month', Payment.data) == mes)\
+            .scalar() or 0
+
+        meses.append(f'{mes:02d}/{ano}')
+        totais.append(round(total, 2))
+
+    return meses, totais
+
+@app.route("/grafico-recentes")
+def grafico_recente():
+    meses, totais = obter_totais_ultimos_3_meses()
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.bar(meses, totais, color=["#2185d0", "#f2711c", "#21ba45"])  # azul, laranja, verde
+    ax.set_ylabel("R$ Faturado")
+    ax.set_title("Faturamento últimos 3 meses")
+
+    for i, v in enumerate(totais):
+        ax.text(i, v + 0.1, f"R$ {v:,.2f}", ha='center', fontsize=8)
+
+    plt.tight_layout()
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plt.close()
+    return send_file(img, mimetype='image/png')
 
 @app.template_filter("format_currency")
 def format_currency_filter(value):
@@ -56,7 +102,7 @@ def index():
     nomes = [row[0] for row in db.session.query(Payment.nome).distinct().all()]
 
     if "competencia" not in session:
-        session["competencia"] = date.today().strftime("%Y-%m")
+        session["competencia"] = datetime.date.today().strftime("%Y-%m")
 
     if request.method == "POST" and "competencia" in request.form:
         session["competencia"] = request.form["competencia"]
@@ -64,8 +110,8 @@ def index():
 
     competencia = session["competencia"]
     ano, mes = map(int, competencia.split("-"))
-    inicio = date(ano, mes, 1)
-    fim = date(ano + int(mes / 12), (mes % 12) + 1, 1)
+    inicio = datetime.date(ano, mes, 1)
+    fim = datetime.date(ano + int(mes / 12), (mes % 12) + 1, 1)
 
     registros = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
 
@@ -75,7 +121,7 @@ def index():
     return render_template(
         "index.html",
         registros=registros,
-        current_date=date.today().isoformat(),
+        current_date=datetime.date.today().isoformat(),
         competencia=competencia,
         nomes=nomes,
         total=total,
@@ -97,7 +143,8 @@ def registrar():
     )
     valor = float(valor_str)
     data_str = request.form["data"]
-    data = datetime.strptime(data_str, "%Y-%m-%d").date()
+    # data = datetime.strptime(data_str, "%Y-%m-%d").date()
+    data = datetime.datetime.strptime(data_str, "%Y-%m-%d").date()
     novo = Payment(nome=nome, cpf=cpf, valor=valor, data=data)
     db.session.add(novo)
     db.session.commit()
@@ -107,10 +154,10 @@ def registrar():
 
 @app.route("/report")
 def report():
-    competencia = session.get("competencia", date.today().strftime("%Y-%m"))
+    competencia = session.get("competencia", datetime.date.today().strftime("%Y-%m"))
     ano, mes = map(int, competencia.split("-"))
-    inicio = date(ano, mes, 1)
-    fim = date(ano + int(mes / 12), (mes % 12) + 1, 1)
+    inicio = datetime.date(ano, mes, 1)
+    fim = datetime.date(ano + int(mes / 12), (mes % 12) + 1, 1)
 
     pags = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
 
@@ -138,10 +185,10 @@ def report():
 def atualizar():
     # print(request.form)
 
-    competencia = session.get("competencia", date.today().strftime("%Y-%m"))
+    competencia = session.get("competencia", datetime.date.today().strftime("%Y-%m"))
     ano, mes = map(int, competencia.split("-"))
-    inicio = date(ano, mes, 1)
-    fim = date(ano + int(mes / 12), (mes % 12) + 1, 1)
+    inicio = datetime.date(ano, mes, 1)
+    fim = datetime.date(ano + int(mes / 12), (mes % 12) + 1, 1)
 
     registros = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
 

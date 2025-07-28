@@ -1,14 +1,27 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    send_file,
+    jsonify,
+    session,
+)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, extract
 
 import datetime
+from datetime import timedelta
+
 import os
 import csv
 import io
 
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from babel.numbers import format_currency
@@ -23,44 +36,90 @@ app = Flask(__name__)
 current_date = datetime.date.today()
 recipients = os.getenv("REPORT_RECIPIENTS", "acftrein@gmail.com").split(",")
 
+
 def obter_totais_ultimos_3_meses():
     hoje = datetime.date.today()
     meses = []
     totais = []
+    totais_considerados = []
 
     for i in range(2, -1, -1):  # últimos 3 meses: mais antigo → atual
-        mes_ano = hoje - datetime.timedelta(days=i*30)
+        mes_ano = hoje - timedelta(days=i * 30)
         ano = mes_ano.year
         mes = mes_ano.month
 
-        total = db.session.query(func.sum(Payment.valor))\
-            .filter(extract('year', Payment.data) == ano)\
-            .filter(extract('month', Payment.data) == mes)\
-            .scalar() or 0
+        total = (
+            db.session.query(func.sum(Payment.valor))
+            .filter(extract("year", Payment.data) == ano)
+            .filter(extract("month", Payment.data) == mes)
+            .scalar()
+            or 0
+        )
 
-        meses.append(f'{mes:02d}/{ano}')
+        total_considerado = (
+            db.session.query(func.sum(Payment.valor))
+            .filter(extract("year", Payment.data) == ano)
+            .filter(extract("month", Payment.data) == mes)
+            .filter(Payment.considerar == True)
+            .scalar()
+            or 0
+        )
+
+        meses.append(f"{mes:02d}/{ano}")
         totais.append(round(total, 2))
+        totais_considerados.append(round(total_considerado, 2))
 
-    return meses, totais
+    return meses, totais, totais_considerados
+
 
 @app.route("/grafico-recentes")
 def grafico_recente():
-    meses, totais = obter_totais_ultimos_3_meses()
+    meses, totais, totais_considerados = obter_totais_ultimos_3_meses()
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.bar(meses, totais, color=["#2185d0", "#f2711c", "#21ba45"])  # azul, laranja, verde
+
+    # Tons de verde para as barras
+    tons_verde = ["#66bb6a", "#43a047", "#2e7d32"]
+    ax.bar(meses, totais, color=tons_verde)
+
+    # Linha para os valores considerados
+    ax.plot(
+        meses,
+        totais_considerados,
+        color="#f21c1c",
+        marker="o",
+        linestyle="-",
+        linewidth=2,
+        label="Considerados",
+    )
+
+    # Rótulos para os pontos da linha
+    for i, val in enumerate(totais_considerados):
+        ax.text(
+            i,
+            val + 0.5,
+            f"R$ {val:,.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+            color="#f21c1c",
+        )
+
+    # Rótulos para barras
+    for i, v in enumerate(totais):
+        ax.text(i, v + 0.5, f"R$ {v:,.2f}", ha="center", fontsize=8)
+
     ax.set_ylabel("R$ Faturado")
     ax.set_title("Faturamento últimos 3 meses")
-
-    for i, v in enumerate(totais):
-        ax.text(i, v + 0.1, f"R$ {v:,.2f}", ha='center', fontsize=8)
+    ax.legend()
 
     plt.tight_layout()
     img = BytesIO()
-    plt.savefig(img, format='png')
+    plt.savefig(img, format="png")
     img.seek(0)
     plt.close()
-    return send_file(img, mimetype='image/png')
+    return send_file(img, mimetype="image/png")
+
 
 @app.template_filter("format_currency")
 def format_currency_filter(value):
@@ -98,7 +157,7 @@ class Payment(db.Model):
 def index():
 
     # Pega nomes únicos para autocomplete
-    #nomes = [n[0] for n in db.session.query(Payment.nome).distinct().all()]
+    # nomes = [n[0] for n in db.session.query(Payment.nome).distinct().all()]
     nomes = [row[0] for row in db.session.query(Payment.nome).distinct().all()]
 
     if "competencia" not in session:
@@ -196,7 +255,7 @@ def atualizar():
         marcado = f"considerar_{r.id}" in request.form
         r.considerar = marcado
     db.session.commit()
-    flash("Marcações atualizadas!")
+    flash("Registro(s) atualizado(s)!")
     return redirect(url_for("index"))
 
 

@@ -97,9 +97,13 @@
     </span>
     <span style="color: #0f993d; font-weight: bold;">
       {{ total_marked | format_currency }}
+      {% if total > 0 %}
+      ({{ ((total_marked / total) * 100) | round(2) }}%)
+      {% endif %}
     </span>
   </div>
 </form>
+
 
 <!-- MODAL -->
 <div id="records-modal" class="ui modal">

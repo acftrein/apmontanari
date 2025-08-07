@@ -130,7 +130,7 @@ def grafico_atual():
     ax.bar(x, valores, width, color=["blue", "green"])
     ax.set_xticks(x)
     ax.set_xticklabels(categories, rotation=45, ha="right")
-    #ax.set_ylabel("R$")
+    # ax.set_ylabel("R$")
     ax.set_title(f"Atual ({labels[0]})")
     ax.grid(axis="y", linestyle="--", alpha=0.6)
     plt.tight_layout()

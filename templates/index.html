@@ -81,45 +81,83 @@
       <a class="item" data-tab="tres">Últ. 3m</a>
       <a class="item" data-tab="quatro">Atual</a>
     </div>
+
     <div class="ui bottom attached tab segment active" data-tab="um">
-      <img data-src="{{ url_for('grafico_12_meses') }}" src="" style="width:100%; height:auto;">
+      <div class="chart-wrapper" data-src="{{ url_for('grafico_12_meses') }}">
+        <div class="chart-loading">Carregando...</div>
+        <img style="display:none; width:100%; height:auto;">
+      </div>
     </div>
+
     <div class="ui bottom attached tab segment" data-tab="dois">
-      <img data-src="{{ url_for('grafico_ano_corrente') }}" src="" style="width:100%; height:auto;">
+      <div class="chart-wrapper" data-src="{{ url_for('grafico_ano_corrente') }}">
+        <div class="chart-loading">Carregando...</div>
+        <img style="display:none; width:100%; height:auto;">
+      </div>
     </div>
+
     <div class="ui bottom attached tab segment" data-tab="tres">
-      <img data-src="{{ url_for('grafico_3_meses') }}" src="" style="width:100%; height:auto;">
+      <div class="chart-wrapper" data-src="{{ url_for('grafico_3_meses') }}">
+        <div class="chart-loading">Carregando...</div>
+        <img style="display:none; width:100%; height:auto;">
+      </div>
     </div>
+
     <div class="ui bottom attached tab segment" data-tab="quatro">
-      <img data-src="{{ url_for('grafico_atual') }}?t={{ current_date }}" src="" style="width:100%; height:auto;">
+      <div class="chart-wrapper" data-src="{{ url_for('grafico_atual') }}?t={{ current_date }}">
+        <div class="chart-loading">Carregando...</div>
+        <img style="display:none; width:100%; height:auto;">
+      </div>
     </div>
-
-
   </div>
+
   <div class="actions" style="text-align: center;">
     <button class="ui red mini button cancel">Fechar</button>
   </div>
 </div>
 
+
 <script>
   $(document).ready(function () {
-    $('#open-chart').click(function () {
-      $('#chart-modal').modal('show');
-      // Força carregar a primeira aba
-      const $firstImg = $('.tab.segment.active img');
-      const baseSrc = $firstImg.data('src');
-      $firstImg.attr('src', baseSrc + '?_=' + new Date().getTime());
-    });
-
     $('.menu .item').tab({
       onVisible: function (tabName) {
-        const $img = $(`.tab.segment[data-tab="${tabName}"] img`);
-        const baseSrc = $img.data('src');
-        $img.attr('src', baseSrc + '?_=' + new Date().getTime());
+        const wrapper = $(`.tab.segment[data-tab="${tabName}"] .chart-wrapper`);
+        const img = wrapper.find('img');
+        const loading = wrapper.find('.chart-loading');
+
+        if (!img.attr('src')) {
+          const src = wrapper.data('src') + '?_=' + new Date().getTime();  // evita cache
+          img.on('load', function () {
+            loading.hide();
+            img.show();
+          });
+          img.attr('src', src);
+        }
+      }
+    });
+
+    $('#open-chart').click(() => {
+      $('#chart-modal').modal('show');
+
+      // Força renderização da aba ativa ao abrir o modal
+      const activeTab = $('.menu .item.active').data('tab');
+      const wrapper = $(`.tab.segment[data-tab="${activeTab}"] .chart-wrapper`);
+      const img = wrapper.find('img');
+      const loading = wrapper.find('.chart-loading');
+
+      if (!img.attr('src')) {
+        const src = wrapper.data('src') + '?_=' + new Date().getTime();
+        img.on('load', function () {
+          loading.hide();
+          img.show();
+        });
+        img.attr('src', src);
       }
     });
   });
 </script>
+
+
 
 <form class="ui form segment">
   <div style="text-align: center;">

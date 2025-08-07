@@ -289,8 +289,21 @@ def format_currency_filter(value):
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 # SECRET_KEY=4f3c7d9f2b87c8432e1c6a23a88f1a65
 app.config["SECRET_KEY"] = "4f3c7d9f2b87c8432e1c6a23a88f1a65"
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+
+# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/atrein/apmontanari/instance/database.db'
+
+# Caminho local
+local_db = "sqlite:///database.db"
+
+# Caminho do servidor (PythonAnywhere)
+server_db = "sqlite:////home/atrein/apmontanari/instance/database.db"
+
+# Detecta se está rodando local ou na web
+if "PYTHONANYWHERE_DOMAIN" in os.environ:
+    app.config["SQLALCHEMY_DATABASE_URI"] = server_db
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = local_db
 
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587

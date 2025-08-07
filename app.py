@@ -31,10 +31,169 @@ from io import BytesIO
 from extensions import db, mail
 from emails import send_report
 
+from dateutil.relativedelta import relativedelta
+from matplotlib.ticker import MaxNLocator
+
+import numpy as np
+
 app = Flask(__name__)
 
 current_date = datetime.date.today()
 recipients = os.getenv("REPORT_RECIPIENTS", "acftrein@gmail.com").split(",")
+
+
+def gerar_png_grafico(meses_labels, totais, considerados, titulo):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(meses_labels, totais, marker="o", color="blue", label="Faturamento")
+    ax.plot(meses_labels, considerados, marker="s", color="green", label="NFS-e")
+    ax.set_ylim(0, max(max(totais), max(considerados)) * 1.1)
+    ax.set_title(titulo)
+    # ax.set_ylabel("R$")
+    ax.legend()
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=8))
+    ax.grid(True, which="major", linestyle="--", linewidth=0.5, alpha=0.7)
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close()
+    return send_file(buf, mimetype="image/png")
+
+
+@app.route("/grafico_12meses")
+def grafico_12_meses():
+    meses, totais, considerados = obter_totais_por_periodo(12)
+    # print("DEBUG (12_meses):", meses, totais, considerados)
+    return gerar_png_grafico(meses, totais, considerados, "Últimos 12 meses")
+
+
+@app.route("/grafico_ano")
+def grafico_ano_corrente():
+    hoje = datetime.date.today()
+    ano_atual = hoje.year
+    mes_atual = hoje.month - 1  # EXCLUI o mês atual
+
+    if mes_atual == 0:
+        return gerar_png_grafico([], [], [], "Ano corrente")  # Nenhum mês fechado ainda
+
+    meses = []
+    totais = []
+    totais_considerados = []
+
+    for i in range(1, mes_atual + 1):
+        ref = datetime.date(ano_atual, i, 1)
+        inicio = ref
+        fim = ref + relativedelta(months=1)
+
+        registros = Payment.query.filter(
+            Payment.data >= inicio, Payment.data < fim
+        ).all()
+
+        total = sum(r.valor for r in registros)
+        total_considerado = sum(r.valor for r in registros if r.considerar)
+
+        meses.append(f"{ref.month:02d}/{ref.year}")
+        totais.append(round(total, 2))
+        totais_considerados.append(round(total_considerado, 2))
+
+    return gerar_png_grafico(meses, totais, totais_considerados, "Ano corrente")
+
+
+@app.route("/grafico_3meses")
+def grafico_3_meses():
+    meses, totais, considerados = obter_totais_por_periodo(3)
+    # print("DEBUG (3_meses):", meses, totais, considerados)
+    return gerar_png_grafico(meses, totais, considerados, "Últimos 3 meses")
+
+
+@app.route("/grafico_atual")
+def grafico_atual():
+    hoje = date.today()
+    inicio = hoje.replace(day=1)
+    fim = inicio + relativedelta(months=1)
+
+    registros = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
+    total = sum(r.valor for r in registros)
+    total_considerado = sum(r.valor for r in registros if r.considerar)
+
+    labels = [f"{inicio.month:02d}/{inicio.year}"]
+    valores = [round(total, 2), round(total_considerado, 2)]
+
+    # Cria gráfico em barras agrupadas
+    fig, ax = plt.subplots(figsize=(4, 4))
+    categories = ["Faturamento", "NFS-e"]
+    x = np.arange(len(categories))
+    width = 0.9
+
+    ax.bar(x, valores, width, color=["blue", "green"])
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories, rotation=45, ha="right")
+    #ax.set_ylabel("R$")
+    ax.set_title(f"Atual ({labels[0]})")
+    ax.grid(axis="y", linestyle="--", alpha=0.6)
+    plt.tight_layout()
+
+    buf = BytesIO()
+    fig.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close(fig)
+    return send_file(buf, mimetype="image/png")
+
+
+def obter_totais_por_periodo(periodo):
+    # hoje = datetime.date.today().replace(day=1)
+    hoje = datetime.date.today().replace(day=1) - relativedelta(months=1)
+    meses = []
+    totais = []
+    totais_considerados = []
+
+    for i in range(periodo - 1, -1, -1):
+        ref = hoje - relativedelta(months=i)
+        inicio = ref
+        fim = ref + relativedelta(months=1)
+
+        registros = Payment.query.filter(
+            Payment.data >= inicio, Payment.data < fim
+        ).all()
+
+        total = sum(r.valor for r in registros)
+        total_considerado = sum(r.valor for r in registros if r.considerar)
+
+        meses.append(f"{ref.month:02d}/{ref.year}")
+        totais.append(round(total, 2))
+        totais_considerados.append(round(total_considerado, 2))
+
+    return meses, totais, totais_considerados
+
+
+@app.route("/grafico/<int:meses>")
+def grafico_periodo(meses):
+    meses_labels, totais, considerados = obter_totais_por_periodo(meses)
+    print("DEBUG:", meses_labels, totais, considerados)
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    ax.plot(meses_labels, totais, marker="o", color="gray", label="Total bruto")
+    ax.plot(meses_labels, considerados, marker="s", color="green", label="Considerados")
+
+    ax.set_ylim(0, max(max(totais), max(considerados)) * 1.1)
+    ax.set_title(f"Faturamento últimos {meses} meses")
+    # ax.set_ylabel("R$")
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=10))
+    ax.legend()
+    ax.grid(True, which="major", linestyle="--", linewidth=0.5, alpha=0.7)
+
+    plt.xticks(rotation=45, ha="right")
+
+    plt.tight_layout()
+
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    plt.close()
+    return send_file(buf, mimetype="image/png")
 
 
 def obter_totais_ultimos_3_meses():
@@ -153,27 +312,39 @@ class Payment(db.Model):
     considerar = db.Column(db.Boolean, default=True)  # NOVO
 
 
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-
-    # Pega nomes únicos para autocomplete
-    # nomes = [n[0] for n in db.session.query(Payment.nome).distinct().all()]
+    # Lista de nomes únicos para autocomplete
     nomes = [row[0] for row in db.session.query(Payment.nome).distinct().all()]
 
-    if "competencia" not in session:
-        session["competencia"] = datetime.date.today().strftime("%Y-%m")
+    # Gera lista dos últimos 12 meses no formato "YYYY-MM"
+    hoje = datetime.date.today().replace(day=1)
+    competencias_disponiveis = [
+        (hoje - relativedelta(months=i)).strftime("%Y-%m") for i in range(13, -1, -1)
+    ]
+
+    # Define competência padrão (mês atual)
+    if (
+        "competencia" not in session
+        or session["competencia"] not in competencias_disponiveis
+    ):
+        session["competencia"] = competencias_disponiveis[-1]
 
     if request.method == "POST" and "competencia" in request.form:
-        session["competencia"] = request.form["competencia"]
+        if request.form["competencia"] in competencias_disponiveis:
+            session["competencia"] = request.form["competencia"]
         return redirect(url_for("index"))
 
     competencia = session["competencia"]
     ano, mes = map(int, competencia.split("-"))
-    inicio = datetime.date(ano, mes, 1)
-    fim = datetime.date(ano + int(mes / 12), (mes % 12) + 1, 1)
+    inicio = date(ano, mes, 1)
+    fim = inicio + relativedelta(months=1)
 
     registros = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
-
     total = sum(r.valor for r in registros)
     total_marked = sum(r.valor for r in registros if r.considerar)
 
@@ -185,6 +356,8 @@ def index():
         nomes=nomes,
         total=total,
         total_marked=total_marked,
+        mes_atual=datetime.date.today().month,
+        competencias=competencias_disponiveis,  # usado no dropdown
     )
 
 

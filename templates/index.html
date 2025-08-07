@@ -54,14 +54,14 @@
   <div class="field">
     <label>Mês de competência</label>
     <select name="competencia" onchange="this.form.submit()">
-      {% for num in range(1, 13) %}
-      <option value="{{ '%s-%02d' % (current_date[:4], num) }}" {% if competencia=='%s-%02d' % (current_date[:4], num)
-        %}selected{% endif %}>
-        {{ '{:02d}'.format(num) }} / {{ current_date[:4] }}
+      {% for comp in competencias %}
+      <option value="{{ comp }}" {% if comp==competencia %}selected{% endif %}>
+        {{ comp[5:] }} / {{ comp[:4] }}
       </option>
       {% endfor %}
     </select>
   </div>
+
 
   <div style="text-align: center; margin-top: 1em;">
     <button type="button" id="open-records" class="ui orange mini button">Ver Registros</button>
@@ -70,23 +70,54 @@
   </div>
 </form>
 
-<!-- Modal com gráfico -->
+<!-- Modal com tabs -->
 <div id="chart-modal" class="ui modal">
   <i class="close icon"></i>
-  <div class="header" style="text-align:center;">
-    Faturamento últimos 3 meses
+  <div class="header" style="text-align: center;">Gráficos de Faturamento</div>
+  <div class="content">
+    <div class="ui top attached tabular menu">
+      <a class="item active" data-tab="um">Últ. 12m</a>
+      <a class="item" data-tab="dois">No ano</a>
+      <a class="item" data-tab="tres">Últ. 3m</a>
+      <a class="item" data-tab="quatro">Atual</a>
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="um">
+      <img data-src="{{ url_for('grafico_12_meses') }}" src="" style="width:100%; height:auto;">
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="dois">
+      <img data-src="{{ url_for('grafico_ano_corrente') }}" src="" style="width:100%; height:auto;">
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="tres">
+      <img data-src="{{ url_for('grafico_3_meses') }}" src="" style="width:100%; height:auto;">
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="quatro">
+      <img data-src="{{ url_for('grafico_atual') }}?t={{ current_date }}" src="" style="width:100%; height:auto;">
+    </div>
+
+
   </div>
-  <div class="content" style="text-align:center;">
-    <img src="{{ url_for('grafico_recente') }}" alt="Gráfico de faturamento" style="max-width:100%; height:auto;">
-  </div>
-  <div class="actions" style="text-align:center;">
+  <div class="actions" style="text-align: center;">
     <button class="ui red mini button cancel">Fechar</button>
   </div>
 </div>
 
 <script>
   $(document).ready(function () {
-    $('#open-chart').click(() => $('#chart-modal').modal('show'));
+    $('#open-chart').click(function () {
+      $('#chart-modal').modal('show');
+      // Força carregar a primeira aba
+      const $firstImg = $('.tab.segment.active img');
+      const baseSrc = $firstImg.data('src');
+      $firstImg.attr('src', baseSrc + '?_=' + new Date().getTime());
+    });
+
+    $('.menu .item').tab({
+      onVisible: function (tabName) {
+        const $img = $(`.tab.segment[data-tab="${tabName}"] img`);
+        const baseSrc = $img.data('src');
+        $img.attr('src', baseSrc + '?_=' + new Date().getTime());
+      }
+    });
   });
 </script>
 

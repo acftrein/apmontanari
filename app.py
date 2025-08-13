@@ -114,14 +114,51 @@ def grafico_atual():
     inicio = hoje.replace(day=1)
     fim = inicio + relativedelta(months=1)
 
+    # Dados do mês atual
     registros = Payment.query.filter(Payment.data >= inicio, Payment.data < fim).all()
     total = sum(r.valor for r in registros)
     total_considerado = sum(r.valor for r in registros if r.considerar)
 
+    # Calcular RBT12 (últimos 12 meses com considerar = 1)
+    rbt12_inicio = inicio - relativedelta(months=11)
+    rbt12_fim = fim
+    registros_rbt12 = Payment.query.filter(
+        Payment.data >= rbt12_inicio,
+        Payment.data < rbt12_fim,
+        Payment.considerar == True,
+    ).all()
+    rbt12 = sum(r.valor for r in registros_rbt12)
+
+    # Tabela de faixas (Anexo III - 2024)
+    faixas = [
+        (180000, 0.06, 0),
+        (360000, 0.112, 9360),
+        (720000, 0.135, 17640),
+        (1800000, 0.16, 35640),
+        (3600000, 0.21, 125640),
+        (4800000, 0.33, 648000),
+    ]
+
+    # Determinar faixa
+    aliquota_nominal, parcela_deduzir = None, None
+    for limite, aliq, deduzir in faixas:
+        if rbt12 <= limite:
+            aliquota_nominal = aliq
+            parcela_deduzir = deduzir
+            break
+
+    # Calcular alíquota efetiva
+    aliquota_efetiva = (
+        ((rbt12 * aliquota_nominal) - parcela_deduzir) / rbt12 if rbt12 else 0
+    )
+
+    # Calcular imposto do mês atual
+    imposto_mes_atual = total_considerado * aliquota_efetiva
+
+    # Criar gráfico
     labels = [f"{inicio.month:02d}/{inicio.year}"]
     valores = [round(total, 2), round(total_considerado, 2)]
 
-    # Cria gráfico em barras agrupadas
     fig, ax = plt.subplots(figsize=(4, 4))
     categories = ["Faturamento", "NFS-e"]
     x = np.arange(len(categories))
@@ -130,9 +167,32 @@ def grafico_atual():
     ax.bar(x, valores, width, color=["blue", "green"])
     ax.set_xticks(x)
     ax.set_xticklabels(categories, rotation=45, ha="right")
-    # ax.set_ylabel("R$")
     ax.set_title(f"Atual ({labels[0]})")
     ax.grid(axis="y", linestyle="--", alpha=0.6)
+
+    # Mostrar imposto + alíquota dentro da barra verde (índice 1)
+    if total_considerado > 0:
+        ax.text(
+            1,  # posição x (barra verde)
+            total_considerado * 0.60,  # levemente acima do centro
+            f"R$ {imposto_mes_atual:,.2f}".replace(",", "X")
+            .replace(".", ",")
+            .replace("X", "."),
+            ha="center",
+            va="center",
+            color="white",
+            fontweight="bold",
+        )
+        ax.text(
+            1,
+            total_considerado * 0.40,  # levemente abaixo
+            f"Alíq.: {aliquota_efetiva*100:.2f}%",
+            ha="center",
+            va="center",
+            color="white",
+            fontweight="bold",
+        )
+
     plt.tight_layout()
 
     buf = BytesIO()
@@ -410,15 +470,17 @@ def report():
     writer = csv.writer(csv_buf, delimiter=";")
     writer.writerow(["nome", "cpf", "valor", "data", "considerar"])
     for p in pags:
+        valor_formatado = f"{p.valor:.2f}".replace(".", ",")  # ponto → vírgula
         writer.writerow(
             [
                 p.nome,
                 p.cpf,
-                f"{p.valor:.2f}",
+                valor_formatado,
                 p.data.strftime("%Y-%m-%d"),
-                "Sim" if p.considerar else "Não",
+                "Sim" if p.considerar else "Nao",
             ]
         )
+
     csv_data = csv_buf.getvalue()
 
     send_report(pags, csv_data)

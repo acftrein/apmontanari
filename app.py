@@ -35,6 +35,9 @@ from dateutil.relativedelta import relativedelta
 from matplotlib.ticker import MaxNLocator
 
 import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()  # carrega variáveis de um .env local (não versionado); em produção use variáveis de ambiente reais
 
 app = Flask(__name__)
 
@@ -345,10 +348,7 @@ def format_currency_filter(value):
     return format_currency(value, "BRL", locale="pt_BR")
 
 
-# app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mudar_isso')
-# app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-# SECRET_KEY=4f3c7d9f2b87c8432e1c6a23a88f1a65
-app.config["SECRET_KEY"] = "4f3c7d9f2b87c8432e1c6a23a88f1a65"
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]  # obrigatório via variável de ambiente
 
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/atrein/apmontanari/instance/database.db'
@@ -368,9 +368,9 @@ else:
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = "acftrein@gmail.com"  # troque pelo seu
-app.config["MAIL_PASSWORD"] = "uhzi hnky zxts ofxf"  # senha do app ou normal
-app.config["MAIL_DEFAULT_SENDER"] = "acftrein@gmail.com"  # mesmo remetente
+app.config["MAIL_USERNAME"] = os.environ["MAIL_USERNAME"]
+app.config["MAIL_PASSWORD"] = os.environ["MAIL_PASSWORD"]  # senha de app do Gmail, nunca hardcode
+app.config["MAIL_DEFAULT_SENDER"] = os.environ["MAIL_USERNAME"]
 
 db.init_app(app)
 mail.init_app(app)

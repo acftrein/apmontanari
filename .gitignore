@@ -27,3 +27,6 @@ Thumbs.db
 instance/
 *.env
 .env
+
+# Backups locais (podem conter segredos antigos)
+Backup from PythonAnyWhere/
